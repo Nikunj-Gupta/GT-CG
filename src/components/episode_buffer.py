@@ -70,7 +70,14 @@ class EpisodeBatch:
                 shape = vshape
 
             if episode_const:
-                self.data.episode_data[field_key] = th.zeros((batch_size, *shape), dtype=dtype, device=self.device)
+                if field_key == "graph":
+                    self.data.episode_data[field_key] = th.ones(
+                        (batch_size, *shape), dtype=dtype, device=self.device
+                    )
+                else:
+                    self.data.episode_data[field_key] = th.zeros(
+                        (batch_size, *shape), dtype=dtype, device=self.device
+                    )
             else:
                 self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape), dtype=dtype, device=self.device)
 
@@ -246,4 +253,3 @@ class ReplayBuffer(EpisodeBatch):
                                                                         self.buffer_size,
                                                                         self.scheme.keys(),
                                                                         self.groups.keys())
-

@@ -167,24 +167,24 @@ class LowRankNSMAC(BasicMAC):
 
     def save_models(self, path):
         for i, ag in enumerate(self.agents):
-            th.save(ag.state_dict(), f\"{path}/agent_{i}.th\")
+            th.save(ag.state_dict(), f"{path}/agent_{i}.th")
         for i, f in enumerate(self.factor_fun):
-            th.save(f.state_dict(), f\"{path}/factors_{i}.th\")
+            th.save(f.state_dict(), f"{path}/factors_{i}.th")
         if self.add_utilities:
             for i, f in enumerate(self.utility_fun):
-                th.save(f.state_dict(), f\"{path}/utilities_{i}.th\")
+                th.save(f.state_dict(), f"{path}/utilities_{i}.th")
 
     def load_models(self, path):
         for i, ag in enumerate(self.agents):
             ag.load_state_dict(
-                th.load(f\"{path}/agent_{i}.th\", map_location=lambda storage, loc: storage)
+                th.load(f"{path}/agent_{i}.th", map_location=lambda storage, loc: storage)
             )
         for i, f in enumerate(self.factor_fun):
             f.load_state_dict(
-                th.load(f\"{path}/factors_{i}.th\", map_location=lambda storage, loc: storage)
+                th.load(f"{path}/factors_{i}.th", map_location=lambda storage, loc: storage)
             )
         if self.add_utilities:
             for i, f in enumerate(self.utility_fun):
                 f.load_state_dict(
-                    th.load(f\"{path}/utilities_{i}.th\", map_location=lambda storage, loc: storage)
+                    th.load(f"{path}/utilities_{i}.th", map_location=lambda storage, loc: storage)
                 )

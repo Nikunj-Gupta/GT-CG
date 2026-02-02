@@ -10,6 +10,10 @@ from .low_rank_controller import LowRankMAC
 from .low_rank_ns_controller import LowRankNSMAC
 from .dicg_controller import DICGMAC
 from .dicg_noshare_controller import DICGNonSharedMAC
+from .dicg_qmix_controller import DICGQmixMAC
+from .gacg_controller import GroupMessageMAC
+from .gtcg_controller import GTCGMAC
+from .gpscg_controller import GPSCGMAC
 
 REGISTRY["basic_mac"] = BasicMAC
 REGISTRY["non_shared_mac"] = NonSharedMAC
@@ -23,3 +27,7 @@ REGISTRY["low_rank_q"] = LowRankMAC
 REGISTRY["low_rank_q_ns"] = LowRankNSMAC
 REGISTRY["dicg_mac"] = DICGMAC
 REGISTRY["dicg_noshare_mac"] = DICGNonSharedMAC
+REGISTRY["dicg_qmix_mac"] = DICGQmixMAC
+REGISTRY["gacg_mac"] = GroupMessageMAC
+REGISTRY["gtcg_mac"] = GTCGMAC
+REGISTRY["gpscg_mac"] = GPSCGMAC

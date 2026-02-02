@@ -15,18 +15,18 @@ log_interval: 2000 # Log summary of stats after every {} timesteps
 runner_log_interval: 2000 # Log runner stats (not test stats) every {} timesteps
 learner_log_interval: 2000 # Log training stats every {} timesteps
 t_max: 10000 # Stop running after this many timesteps
-use_cuda: False # Use gpu by default unless it isn't available
+use_cuda: True # Use gpu by default unless it isn't available
 buffer_cpu_only: True # If true we won't keep all of the replay buffer in vram
 
 # --- Logging options ---
 use_tensorboard: True # Log results to tensorboard
-use_wandb: False # Log results to W&B
-wandb_team: null # W&B team name
-wandb_project: null # W&B project name
-wandb_mode: "offline" # W&B mode (online/offline)
+use_wandb: True # Log results to W&B
+wandb_team: _nikunj # W&B team name
+wandb_project: gtcg-debug # W&B project name
+wandb_mode: "online" # W&B mode (online/offline)
 wandb_save_model: False # Save models to W&B (only done if use_wandb is True and save_model is True)
 save_model: True # Save the models to disk
-save_model_interval: 50000 # Save models after this many timesteps
+save_model_interval: 100000 # Save models after this many timesteps
 checkpoint_path: "" # Load a checkpoint from this path
 evaluate: False # Evaluate model for test_nepisode episodes and quit (no training)
 render: False # Render the environment when evaluating (only when evaluate == True)

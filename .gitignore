@@ -3,6 +3,7 @@
 # Edit at https://www.gitignore.io/?templates=linux,python,windows,pycharm+all,visualstudiocode
 
 results/
+wandb/
 
 ### Linux ###
 *~

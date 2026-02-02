@@ -55,7 +55,11 @@ def run(_run, _config, _log):
 
     if args.use_wandb:
         logger.setup_wandb(
-            _config, args.wandb_team, args.wandb_project, args.wandb_mode
+            _config,
+            args.wandb_team,
+            args.wandb_project,
+            args.wandb_mode,
+            run_name=unique_token,
         )
 
     # sacred is on by default
@@ -102,11 +106,17 @@ def run_sequential(args, logger):
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
+    args.obs_shape = env_info["obs_shape"]
 
     # Default/Base scheme
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
+        "graph": {
+            "vshape": (args.n_agents, args.n_agents),
+            "dtype": th.long,
+            "episode_const": True,
+        },
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
         "avail_actions": {
             "vshape": (env_info["n_actions"],),

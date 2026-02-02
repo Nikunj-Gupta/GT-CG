@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Clean working PyMARL/PyTorch environment
-# conda create -n pymarl python=3.10 -y
-# conda activate pymarl
+# conda create -n gtcg python=3.10 -y
+# conda activate gtcg
 
 python -m pip install --upgrade pip
 
@@ -25,4 +25,4 @@ pip install --force-reinstall pyg_lib torch_scatter torch_sparse torch_cluster t
 pip install --force-reinstall torch_geometric
 
 # Install other dependencies
-pip install pymongo setproctitle sacred pyyaml tensorboard_logger matplotlib
+pip install pymongo setproctitle sacred pyyaml tensorboard_logger matplotlib wandb 

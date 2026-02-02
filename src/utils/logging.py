@@ -30,7 +30,7 @@ class Logger:
         self.console_logger.info(f"{directory_name}")
         self.console_logger.info("*******************")
 
-    def setup_wandb(self, config, team_name, project_name, mode):
+    def setup_wandb(self, config, team_name, project_name, mode, run_name=None):
         import wandb
 
         assert (
@@ -64,6 +64,7 @@ class Logger:
             project=project_name,
             config=config,
             group=group_name,
+            name=run_name,
             mode=mode,
         )
 
