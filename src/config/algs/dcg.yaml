@@ -1,0 +1,36 @@
+# --- Deep Coordination Graph parameters ---
+
+name: "dcg"
+
+# Exploration
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+evaluation_epsilon: 0.0
+
+runner: "episode"
+buffer_size: 500
+
+# Coordination graph structure
+cg_edges: "full"          # {'vdn','line','cycle','star','full', int, or list of edges}
+cg_utilities_hidden_dim:  # Hidden layers of utility functions (None for linear)
+cg_payoffs_hidden_dim:    # Hidden layers of payoff functions (None for linear)
+cg_payoff_rank:           # >0 for low-rank payoff decomposition, else full rank
+duelling: False
+msg_anytime: True
+msg_iterations: 8
+msg_normalized: True
+
+# Training
+agent: "rnn_feat"
+agent_output_type: "q"
+learner: "dcg_learner"
+mac: "dcg_mac"
+mixer:
+mixing_embed_dim: 32
+target_update_interval_or_tau: 200
+double_q: True
+standardise_returns: False
+standardise_rewards: False
+use_rnn: True

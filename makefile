@@ -1,0 +1,23 @@
+# ALGO ?= dicg_ctde 
+ALGO ?= dicg_ctce_actor_critic_ns
+
+all: 
+	clear 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=25 env_args.key="matrixgames:penalty-100-nostate-v0" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=50 env_args.key="lbforaging:Foraging-8x8-2p-3f-v3" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=500 env_args.key="rware:rware-tiny-2ag-v2" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=25 env_args.key="pz-mpe-simple-spread-v3" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=sc2 with env_args.map_name="3s5z" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=sc2v2 with env_args.map_name="protoss_5_vs_5" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=smaclite with env_args.time_limit=150 env_args.map_name="MMM" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=25 env_args.key="pz-mpe-simple-spread-v3" seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=gymma with env_args.time_limit=150 env_args.key="vmas-balance" seed=10 t_max=25000 
+
+	
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=hallway seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=gather seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=disperse seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=pursuit seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=aloha seed=10 t_max=25000 
+	python src/main.py --config=$(ALGO) --env-config=maco with env_args.map_name=sensor seed=10 t_max=25000 
+

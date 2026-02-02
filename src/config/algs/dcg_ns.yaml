@@ -1,0 +1,33 @@
+# --- Deep Coordination Graph (non-shared) ---
+
+name: "dcg_ns"
+
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+evaluation_epsilon: 0.0
+
+runner: "episode"
+buffer_size: 500
+
+cg_edges: "full"
+cg_utilities_hidden_dim:
+cg_payoffs_hidden_dim:
+cg_payoff_rank:
+duelling: False
+msg_anytime: True
+msg_iterations: 8
+msg_normalized: True
+
+agent: "rnn_feat"
+agent_output_type: "q"
+learner: "dcg_learner"
+mac: "dcg_ns_mac"
+mixer:
+mixing_embed_dim: 32
+target_update_interval_or_tau: 200
+double_q: True
+standardise_returns: False
+standardise_rewards: False
+use_rnn: True

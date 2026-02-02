@@ -1,0 +1,28 @@
+# --- Low-rank Q-value Approximation (non-shared) ---
+
+name: "lrq_ns"
+
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+evaluation_epsilon: 0.0
+
+runner: "episode"
+buffer_size: 500
+
+add_utilities: False
+fully_observable: False
+low_rank: 64
+max_iterations: 8
+
+agent: "rnn_ns"
+agent_output_type: "q"
+mac: "low_rank_q_ns"
+learner: "dcg_learner"
+mixer:
+double_q: True
+target_update_interval_or_tau: 200
+standardise_returns: False
+standardise_rewards: False
+use_rnn: True

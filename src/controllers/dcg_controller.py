@@ -1,0 +1,292 @@
+import contextlib
+import itertools
+from math import factorial
+from random import randrange
+
+import numpy as np
+import torch as th
+import torch.nn as nn
+import torch_scatter
+
+from .basic_controller import BasicMAC
+
+
+class DeepCoordinationGraphMAC(BasicMAC):
+    """Multi-agent controller for Deep Coordination Graphs (Boehmer et al., 2020)."""
+
+    def __init__(self, scheme, groups, args):
+        super().__init__(scheme, groups, args)
+        self.n_actions = args.n_actions
+        self.hidden_dim = getattr(args, "rnn_hidden_dim", args.hidden_dim)
+        self.payoff_rank = args.cg_payoff_rank
+        self.payoff_decomposition = (
+            isinstance(self.payoff_rank, int) and self.payoff_rank > 0
+        )
+        self.iterations = args.msg_iterations
+        self.normalized = args.msg_normalized
+        self.anytime = args.msg_anytime
+
+        # Networks for utilities and payoff functions
+        self.utility_fun = self._mlp(
+            self.hidden_dim, args.cg_utilities_hidden_dim, self.n_actions
+        )
+        payoff_out = (
+            2 * self.payoff_rank * self.n_actions
+            if self.payoff_decomposition
+            else self.n_actions**2
+        )
+        self.payoff_fun = self._mlp(
+            2 * self.hidden_dim, args.cg_payoffs_hidden_dim, payoff_out
+        )
+
+        # Optional duelling head
+        self.duelling = args.duelling
+        if self.duelling:
+            self.state_value = self._mlp(
+                int(np.prod(args.state_shape)), [args.mixing_embed_dim], 1
+            )
+
+        # Graph structure
+        self.edges_from = None
+        self.edges_to = None
+        self.edges_n_in = None
+        self._set_edges(self._edge_list(args.cg_edges))
+
+    # DCG Core Methods
+
+    def annotations(self, ep_batch, t, compute_grads=False, actions=None):
+        """Return utilities and payoffs (Alg.1)."""
+        with th.no_grad() if not compute_grads else contextlib.suppress():
+            agent_inputs = self._build_inputs(ep_batch, t)
+            self.hidden_states = self.agent(agent_inputs, self.hidden_states)[1].view(
+                ep_batch.batch_size, self.n_agents, -1
+            )
+            f_i = self.utilities(self.hidden_states)
+            f_ij = self.payoffs(self.hidden_states)
+        return f_i, f_ij
+
+    def utilities(self, hidden_states):
+        return self.utility_fun(hidden_states)
+
+    def payoffs(self, hidden_states):
+        n = self.n_actions
+        inputs = th.stack(
+            [
+                th.cat(
+                    [hidden_states[:, self.edges_from], hidden_states[:, self.edges_to]],
+                    dim=-1,
+                ),
+                th.cat(
+                    [hidden_states[:, self.edges_to], hidden_states[:, self.edges_from]],
+                    dim=-1,
+                ),
+            ],
+            dim=0,
+        )
+        output = self.payoff_fun(inputs)
+        if self.payoff_decomposition:
+            dim = list(output.shape[:-1])
+            output = output.view(*[np.prod(dim) * self.payoff_rank, 2, n])
+            output = th.bmm(
+                output[:, 0, :].unsqueeze(dim=-1),
+                output[:, 1, :].unsqueeze(dim=-2),
+            )
+            output = output.view(*(dim + [self.payoff_rank, n, n])).sum(dim=-3)
+        else:
+            output = output.view(*(list(output.shape[:-1]) + [n, n]))
+        output[1] = output[1].transpose(dim0=-2, dim1=-1).clone()
+        return output.mean(dim=0)
+
+    def q_values(self, f_i, f_ij, actions):
+        n_batches = actions.shape[0]
+        values = f_i.gather(dim=-1, index=actions).squeeze(dim=-1).mean(dim=-1)
+        if len(self.edges_from) > 0:
+            f_ij = f_ij.view(n_batches, len(self.edges_from), self.n_actions * self.n_actions)
+            edge_actions = actions.gather(
+                dim=-2, index=self.edges_from.view(1, -1, 1).expand(n_batches, -1, 1)
+            ) * self.n_actions + actions.gather(
+                dim=-2, index=self.edges_to.view(1, -1, 1).expand(n_batches, -1, 1)
+            )
+            values = values + f_ij.gather(dim=-1, index=edge_actions).squeeze(dim=-1).mean(dim=-1)
+        return values
+
+    def greedy(self, f_i, f_ij, available_actions=None):
+        in_f_i, f_i = f_i, f_i.double() / self.n_agents
+        in_f_ij, f_ij = f_ij, f_ij.double() / len(self.edges_from)
+        if available_actions is not None:
+            f_i = f_i.masked_fill(available_actions == 0, -float("inf"))
+
+        best_value = in_f_i.new_empty(f_i.shape[0]).fill_(-float("inf"))
+        best_actions = f_i.new_empty(
+            best_value.shape[0], self.n_agents, 1, dtype=th.int64, device=f_i.device
+        )
+        utils = f_i
+        if len(self.edges_from) > 0 and self.iterations > 0:
+            messages = f_i.new_zeros(
+                2, f_i.shape[0], len(self.edges_from), self.n_actions
+            )
+            for _ in range(self.iterations):
+                joint0 = (utils[:, self.edges_from] - messages[1]).unsqueeze(dim=-1) + f_ij
+                joint1 = (utils[:, self.edges_to] - messages[0]).unsqueeze(dim=-1) + f_ij.transpose(
+                    dim0=-2, dim1=-1
+                )
+                messages[0] = joint0.max(dim=-2)[0]
+                messages[1] = joint1.max(dim=-2)[0]
+                if self.normalized:
+                    messages -= messages.mean(dim=-1, keepdim=True)
+                msg = torch_scatter.scatter_add(
+                    src=messages[0], index=self.edges_to, dim=1, dim_size=self.n_agents
+                )
+                msg += torch_scatter.scatter_add(
+                    src=messages[1], index=self.edges_from, dim=1, dim_size=self.n_agents
+                )
+                utils = f_i + msg
+                if self.anytime:
+                    actions = utils.max(dim=-1, keepdim=True)[1]
+                    value = self.q_values(in_f_i, in_f_ij, actions)
+                    change = value > best_value
+                    best_value[change] = value[change]
+                    best_actions[change] = actions[change]
+        if not self.anytime or len(self.edges_from) == 0 or self.iterations <= 0:
+            _, best_actions = utils.max(dim=-1, keepdim=True)
+        return best_actions
+
+    def forward(self, ep_batch, t, actions=None, policy_mode=True, test_mode=False, compute_grads=False):
+        f_i, f_ij = self.annotations(ep_batch, t, compute_grads, actions)
+        if actions is not None and not policy_mode:
+            values = self.q_values(f_i, f_ij, actions)
+            if self.duelling:
+                with th.no_grad() if not compute_grads else contextlib.suppress():
+                    values = values + self.state_value(ep_batch["state"][:, t]).squeeze()
+            return values
+        actions = self.greedy(f_i, f_ij, available_actions=ep_batch["avail_actions"][:, t])
+        if policy_mode:
+            policy = f_i.new_zeros(ep_batch.batch_size, self.n_agents, self.n_actions)
+            policy.scatter_(dim=-1, index=actions, src=policy.new_ones(1, 1, 1).expand_as(actions))
+            return policy
+        return actions
+
+    def cuda(self):
+        self.agent.cuda()
+        self.utility_fun.cuda()
+        self.payoff_fun.cuda()
+        if self.edges_from is not None:
+            self.edges_from = self.edges_from.cuda()
+            self.edges_to = self.edges_to.cuda()
+            self.edges_n_in = self.edges_n_in.cuda()
+        if self.duelling:
+            self.state_value.cuda()
+
+    def parameters(self):
+        param = itertools.chain(
+            BasicMAC.parameters(self), self.utility_fun.parameters(), self.payoff_fun.parameters()
+        )
+        if self.duelling:
+            param = itertools.chain(param, self.state_value.parameters())
+        return param
+
+    def load_state(self, other_mac):
+        BasicMAC.load_state(self, other_mac)
+        self.utility_fun.load_state_dict(other_mac.utility_fun.state_dict())
+        self.payoff_fun.load_state_dict(other_mac.payoff_fun.state_dict())
+        if self.duelling:
+            self.state_value.load_state_dict(other_mac.state_value.state_dict())
+
+    def save_models(self, path):
+        BasicMAC.save_models(self, path)
+        th.save(self.utility_fun.state_dict(), f"{path}/utilities.th")
+        th.save(self.payoff_fun.state_dict(), f"{path}/payoffs.th")
+        if self.duelling:
+            th.save(self.state_value, f"{path}/state_value.th")
+
+    def load_models(self, path):
+        BasicMAC.load_models(self, path)
+        self.utility_fun.load_state_dict(
+            th.load(f"{path}/utilities.th", map_location=lambda storage, loc: storage)
+        )
+        self.payoff_fun.load_state_dict(
+            th.load(f"{path}/payoffs.th", map_location=lambda storage, loc: storage)
+        )
+        if self.duelling:
+            self.state_value.load_state_dict(
+                th.load(f"{path}/state_value.th", map_location=lambda storage, loc: storage)
+            )
+
+    # helpers
+    @staticmethod
+    def _mlp(input, hidden_dims, output):
+        hidden_dims = [] if hidden_dims is None else hidden_dims
+        hidden_dims = [hidden_dims] if isinstance(hidden_dims, int) else hidden_dims
+        dim = input
+        layers = []
+        for d in hidden_dims:
+            layers.append(nn.Linear(dim, d))
+            layers.append(nn.ReLU())
+            dim = d
+        layers.append(nn.Linear(dim, output))
+        return nn.Sequential(*layers)
+
+    def _edge_list(self, arg):
+        edges = []
+        wrong_arg = (
+            "Parameter cg_edges must be either a string:{'vdn','line','cycle','star','full'}, "
+            "an int for the number of random edges (<= n_agents!), "
+            "or a list of either int-tuple or list-with-two-int-each for direct specification."
+        )
+        if isinstance(arg, str):
+            if arg == "vdn":
+                pass
+            elif arg == "line":
+                edges = [(i, i + 1) for i in range(self.n_agents - 1)]
+            elif arg == "cycle":
+                edges = [(i, i + 1) for i in range(self.n_agents - 1)] + [
+                    (self.n_agents - 1, 0)
+                ]
+            elif arg == "star":
+                edges = [(0, i + 1) for i in range(self.n_agents - 1)]
+            elif arg == "full":
+                edges = [
+                    [(j, i + j + 1) for i in range(self.n_agents - j - 1)]
+                    for j in range(self.n_agents - 1)
+                ]
+                edges = [e for l in edges for e in l]
+            else:
+                assert False, wrong_arg
+        if isinstance(arg, int):
+            assert 0 <= arg <= factorial(self.n_agents - 1), wrong_arg
+            for _ in range(arg):
+                found = False
+                while not found:
+                    e = (randrange(self.n_agents), randrange(self.n_agents))
+                    if e[0] != e[1] and e not in edges and (e[1], e[0]) not in edges:
+                        edges.append(e)
+                        found = True
+        if isinstance(arg, list):
+            assert all(
+                [
+                    (isinstance(l, list) or isinstance(l, tuple))
+                    and (len(l) == 2 and all([isinstance(i, int) for i in l]))
+                    for l in arg
+                ]
+            ), wrong_arg
+            edges = arg
+        return edges
+
+    def _set_edges(self, edge_list):
+        self.edges_from = th.zeros(len(edge_list), dtype=th.long)
+        self.edges_to = th.zeros(len(edge_list), dtype=th.long)
+        for i, edge in enumerate(edge_list):
+            self.edges_from[i] = edge[0]
+            self.edges_to[i] = edge[1]
+        self.edges_n_in = torch_scatter.scatter_add(
+            src=self.edges_to.new_ones(len(self.edges_to)),
+            index=self.edges_to,
+            dim=0,
+            dim_size=self.n_agents,
+        ) + torch_scatter.scatter_add(
+            src=self.edges_to.new_ones(len(self.edges_to)),
+            index=self.edges_from,
+            dim=0,
+            dim_size=self.n_agents,
+        )
+        self.edges_n_in = self.edges_n_in.float()
