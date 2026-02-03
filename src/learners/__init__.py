@@ -9,6 +9,7 @@ from .ppo_learner import PPOLearner
 from .dcg_learner import DCGLearner
 from .gacg_learner import GACGLearner
 from .vast_learner import VastQLearner
+from .casec_learner import CASECLearner
 
 
 REGISTRY = {}
@@ -23,3 +24,4 @@ REGISTRY["pac_dcg_learner"] = PACDCGLearner
 REGISTRY["dcg_learner"] = DCGLearner
 REGISTRY["gacg_learner"] = GACGLearner
 REGISTRY["vast_learner"] = VastQLearner
+REGISTRY["casec_learner"] = CASECLearner

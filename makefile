@@ -1,5 +1,5 @@
 # ALGO ?= dicg_ctde 
-ALGO ?= gpscg  
+ALGO ?= casec  
 
 all: 
 	clear 
