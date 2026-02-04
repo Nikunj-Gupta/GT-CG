@@ -8,23 +8,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --array=0-59%32
 
-set -euo pipefail
-
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-REPO_ROOT="${SCRIPT_DIR}"
-while [[ ! -f "${REPO_ROOT}/src/main.py" && "${REPO_ROOT}" != "/" ]]; do
-  REPO_ROOT="$(dirname "${REPO_ROOT}")"
-done
-if [[ ! -f "${REPO_ROOT}/src/main.py" ]]; then
-  echo "Could not locate repo root from ${SCRIPT_DIR}" >&2
-  exit 1
-fi
-
-export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-}"
-source ~/.bashrc
-module load gcc/11.3.0 git/2.36.1
 conda activate gtcg
-cd "${REPO_ROOT}"
 
 ENVS=("aloha" "disperse" "gather" "hallway" "pursuit" "sensor")
 ALGOS=("gtcg" "gpscg")
