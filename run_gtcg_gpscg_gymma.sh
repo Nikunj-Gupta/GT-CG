@@ -3,9 +3,9 @@
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=16G
-#SBATCH --time=00:00:05
+#SBATCH --cpus-per-task=64
+#SBATCH --mem=128G
+#SBATCH --time=48:00:00
 #SBATCH --array=0-79
 
 conda activate gtcg
@@ -53,7 +53,7 @@ WRAPPER="${WRAPPERS[$ENV_INDEX]}"
 ALGO="${ALGOS[$ALGO_INDEX]}"
 SEED="${SEEDS[$SEED_INDEX]}"
 
-T_MAX="${T_MAX:-25000}"
+T_MAX="${T_MAX:-2000000}"
 TIME_LIMIT="${TIME_LIMIT:-25}"
 USE_CUDA="${USE_CUDA:-True}"
 RESULTS_PATH="${RESULTS_PATH:-results-gymma}"
@@ -62,7 +62,7 @@ echo "Launching gymma task=${TASK_ID}/${TOTAL} env=${ENV_KEY} algo=${ALGO} seed=
 
 WRAPPER_ARG=()
 if [[ -n "${WRAPPER}" ]]; then
-  WRAPPER_ARG=(with env_args.pretrained_wrapper="${WRAPPER}")
+  WRAPPER_ARG=(env_args.pretrained_wrapper="${WRAPPER}")
 fi
 
 python src/main.py --config="${ALGO}" --env-config=gymma \
