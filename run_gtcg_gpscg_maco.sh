@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-#SBATCH --account=prasanna_1363
+#SBATCH --account=prasanna_933
 #SBATCH --partition=main
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=64
-#SBATCH --mem=128G
-#SBATCH --time=48:00:00
-#SBATCH --array=0-59%32
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=16G
+#SBATCH --time=00:00:05
+#SBATCH --array=0-5
 
 conda activate gtcg
 

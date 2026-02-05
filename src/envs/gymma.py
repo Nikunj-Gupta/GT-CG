@@ -2,7 +2,7 @@ from collections.abc import Iterable
 import warnings
 
 import gymnasium as gym
-from gymnasium.spaces import flatdim
+from gymnasium.spaces import flatdim, Discrete
 from gymnasium.wrappers import TimeLimit
 import numpy as np
 
@@ -47,6 +47,21 @@ class GymmaWrapper(MultiAgentEnv):
         self.episode_limit = time_limit
         self._obs = None
         self._info = None
+
+        # This codebase assumes discrete action spaces. Fail fast with a clear error
+        # if the env uses continuous actions (e.g., Box).
+        non_discrete = [
+            (idx, space)
+            for idx, space in enumerate(self._env.action_space)
+            if not isinstance(space, Discrete)
+        ]
+        if non_discrete:
+            idx, space = non_discrete[0]
+            raise ValueError(
+                "GymmaWrapper only supports discrete action spaces. "
+                f"Agent {idx} has action space {type(space).__name__} "
+                f"({space}). Use a discrete env or add continuous-action support."
+            )
 
         self.longest_action_space = max(self._env.action_space, key=lambda x: x.n)
         self.longest_observation_space = max(
