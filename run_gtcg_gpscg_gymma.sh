@@ -55,7 +55,8 @@ SEED="${SEEDS[$SEED_INDEX]}"
 
 T_MAX="${T_MAX:-2000000}"
 TIME_LIMIT="${TIME_LIMIT:-25}"
-USE_CUDA="${USE_CUDA:-True}"
+USE_CUDA="${USE_CUDA:-False}"
+WANDB_PROJECT="${WANDB_PROJECT:-gtcg-discovery}"
 RESULTS_PATH="${RESULTS_PATH:-results-gymma}"
 
 echo "Launching gymma task=${TASK_ID}/${TOTAL} env=${ENV_KEY} algo=${ALGO} seed=${SEED}"
@@ -67,5 +68,5 @@ fi
 
 python src/main.py --config="${ALGO}" --env-config=gymma \
   with env_args.time_limit="${TIME_LIMIT}" env_args.key="${ENV_KEY}" seed="${SEED}" \
-  t_max="${T_MAX}" use_cuda="${USE_CUDA}" local_results_path="${RESULTS_PATH}" \
+  t_max="${T_MAX}" use_cuda="${USE_CUDA}" wandb_project="${WANDB_PROJECT}" local_results_path="${RESULTS_PATH}" \
   "${WRAPPER_ARG[@]}"

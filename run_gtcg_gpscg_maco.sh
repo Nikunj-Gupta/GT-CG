@@ -34,10 +34,11 @@ ALGO="${ALGOS[$ALGO_INDEX]}"
 SEED="${SEEDS[$SEED_INDEX]}"
 
 T_MAX="${T_MAX:-2050000}"
-USE_CUDA="${USE_CUDA:-True}"
+USE_CUDA="${USE_CUDA:-False}"
+WANDB_PROJECT="${WANDB_PROJECT:-gtcg-discovery}"
 RESULTS_PATH="${RESULTS_PATH:-results-maco}"
 
 echo "Launching maco task=${TASK_ID}/${TOTAL} env=${ENV_KEY} algo=${ALGO} seed=${SEED}"
 
 python src/main.py --config="${ALGO}" --env-config=maco \
-  with env_args.map_name="${ENV_KEY}" seed="${SEED}" t_max="${T_MAX}" use_cuda="${USE_CUDA}" local_results_path="${RESULTS_PATH}"
+  with env_args.map_name="${ENV_KEY}" seed="${SEED}" t_max="${T_MAX}" use_cuda="${USE_CUDA}" wandb_project="${WANDB_PROJECT}" local_results_path="${RESULTS_PATH}"

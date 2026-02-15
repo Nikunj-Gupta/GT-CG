@@ -49,8 +49,9 @@ read -r ENV_TYPE ENV_NAME WRAPPER ALGO SEED <<< "${TASKS[$TASK_ID]}"
 
 T_MAX="${T_MAX:-2000000}"
 TIME_LIMIT="${TIME_LIMIT:-25}"
-USE_CUDA="${USE_CUDA:-True}"
+USE_CUDA="${USE_CUDA:-False}"
 USE_WANDB="${USE_WANDB:-True}"
+WANDB_PROJECT="${WANDB_PROJECT:-gtcg-discovery}"
 RESULTS_PATH="${RESULTS_PATH:-results-vast-ltscg-gymma}"
 
 echo "Launching task=${TASK_ID}/${TOTAL} env=${ENV_NAME} algo=${ALGO} seed=${SEED}"
@@ -64,4 +65,4 @@ fi
 python src/main.py --config="${ALGO}" --env-config=gymma \
   with env_args.time_limit="${TIME_LIMIT}" env_args.key="${ENV_KEY}" seed="${SEED}" \
   t_max="${T_MAX}" use_cuda="${USE_CUDA}" use_wandb="${USE_WANDB}" \
-  local_results_path="${RESULTS_PATH}" "${WRAPPER_ARG[@]}"
+  wandb_project="${WANDB_PROJECT}" local_results_path="${RESULTS_PATH}" "${WRAPPER_ARG[@]}"
