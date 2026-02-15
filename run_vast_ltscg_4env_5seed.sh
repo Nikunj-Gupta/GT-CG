@@ -8,8 +8,6 @@
 #SBATCH --time=48:00:00
 #SBATCH --array=0-39%32
 
-set -euo pipefail
-
 conda activate gtcg
 
 SEEDS=("0" "1" "2" "3" "4")

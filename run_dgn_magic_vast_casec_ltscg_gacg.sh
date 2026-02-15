@@ -8,8 +8,6 @@
 #SBATCH --time=48:00:00
 #SBATCH --array=0-139%32
 
-set -euo pipefail
-
 conda activate gtcg
 
 # NOTE: "reference" was listed twice in the request. It is included once.
