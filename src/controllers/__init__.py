@@ -15,6 +15,9 @@ from .gacg_controller import GroupMessageMAC
 from .gtcg_controller import GTCGMAC
 from .gpscg_controller import GPSCGMAC
 from .casec_controller import CASECMAC
+from .dgn_controller import DGNMAC
+from .magic_controller import MAGICMAC
+from .ltscg_controller import LTSCGGraphMAC
 
 REGISTRY["basic_mac"] = BasicMAC
 REGISTRY["non_shared_mac"] = NonSharedMAC
@@ -33,3 +36,6 @@ REGISTRY["gacg_mac"] = GroupMessageMAC
 REGISTRY["gtcg_mac"] = GTCGMAC
 REGISTRY["gpscg_mac"] = GPSCGMAC
 REGISTRY["casec_mac"] = CASECMAC
+REGISTRY["dgn_mac"] = DGNMAC
+REGISTRY["magic_mac"] = MAGICMAC
+REGISTRY["ltscg_mac"] = LTSCGGraphMAC

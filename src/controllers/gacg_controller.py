@@ -3,6 +3,7 @@ import itertools
 import torch
 import torch as th
 import torch.nn as nn
+import numpy as np
 from torch.distributions.relaxed_bernoulli import RelaxedBernoulli
 
 from .basic_controller import BasicMAC
@@ -20,8 +21,14 @@ class GroupMessageMAC(BasicMAC):
         self.dicg_emb_hid = args.dicg_emb_hid
 
         org_input_shape = self._get_input_shape(scheme)
+        obs_vshape = scheme["obs"]["vshape"]
+        obs_dim = int(np.prod(obs_vshape)) if isinstance(obs_vshape, (list, tuple)) else int(obs_vshape)
 
-        self.gcn_message_dim = int(args.gcn_message_dim * scheme["obs"]["vshape"])
+        # Support both ratio (<1) and absolute (>=1) settings while avoiding zero-dim layers.
+        if args.gcn_message_dim < 1:
+            self.gcn_message_dim = max(1, int(round(args.gcn_message_dim * obs_dim)))
+        else:
+            self.gcn_message_dim = max(1, int(args.gcn_message_dim))
         self.concate_mlp_dim = args.concate_mlp_dim
 
         agent_input_shape = org_input_shape
@@ -60,7 +67,7 @@ class GroupMessageMAC(BasicMAC):
         # Grouping
         group_num = args.group_num
         self.trunk_size = args.obs_group_trunk_size
-        self.group_in_shape = scheme["obs"]["vshape"] * self.trunk_size
+        self.group_in_shape = obs_dim * self.trunk_size
         self.groupnizer = self._mlp(self.group_in_shape, self.mlp_emb_dim, group_num)
         self.small_eye_matrix = 0.001 * torch.eye(self.n_agents).unsqueeze(0)
 

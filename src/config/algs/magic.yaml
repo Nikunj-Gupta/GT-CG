@@ -1,0 +1,51 @@
+# --- MAGIC specific parameters ---
+name: "magic"
+
+# Exploration
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+evaluation_epsilon: 0.0
+
+runner: "episode"
+buffer_size: 5000
+target_update_interval_or_tau: 200
+
+# Agent inputs
+obs_agent_id: True
+obs_last_action: False
+obs_individual_obs: False
+
+# MAGIC architecture
+magic_hidden_dim: 128
+magic_gat_hidden_dim: 128
+magic_gat_heads: 4
+magic_gat_out_heads: 4
+magic_use_gat_encoder: False
+magic_gat_encoder_out_dim: 64
+magic_gat_encoder_heads: 2
+magic_directed: True
+magic_first_graph_complete: False
+magic_second_graph_complete: False
+magic_learn_second_graph: True
+magic_first_gat_normalize: False
+magic_second_gat_normalize: False
+magic_gat_encoder_normalize: False
+magic_self_loop_type1: 2
+magic_self_loop_type2: 2
+magic_message_encoder: False
+magic_message_decoder: False
+
+# Training
+standardise_returns: False
+standardise_rewards: True
+double_q: True
+
+agent_output_type: "q"
+learner: "q_learner"
+mac: "magic_mac"
+mixer: "qmix"
+mixing_embed_dim: 32
+hypernet_layers: 2
+hypernet_embed: 64
