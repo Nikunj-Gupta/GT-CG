@@ -43,7 +43,10 @@ def run(_run, _config, _log):
         map_name = _config["env_args"]["map_name"]
     except:
         map_name = _config["env_args"]["key"]
-    unique_token = f"{_config['name']}__{_config['env']}__{map_name}__seed{_config['seed']}__{datetime.datetime.now()}"
+    unique_token = (
+        f"{_config['name']}__{_config['env']}__{map_name}__{_config['run_tag']}__"
+        f"seed{_config['seed']}__{datetime.datetime.now()}"
+    )
 
     args.unique_token = unique_token
     if args.use_tensorboard:
@@ -294,5 +297,12 @@ def args_sanity_check(config, _log):
         config["test_nepisode"] = (
             config["test_nepisode"] // config["batch_size_run"]
         ) * config["batch_size_run"]
+
+    if "run_tag" not in config or config["run_tag"] in ["", None]:
+        conv = config.get("gtcg_conv_type", "transf")
+        heads = config.get("transformer_heads", 1)
+        layers = config.get("number_gcn_layers", 1)
+        pm = 1 if config.get("param_match", False) else 0
+        config["run_tag"] = f"abl_{conv}_H{heads}_L{layers}_PM{pm}"
 
     return config

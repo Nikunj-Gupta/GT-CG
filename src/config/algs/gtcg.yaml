@@ -27,6 +27,9 @@ number_gcn_layers: 2
 residual: True
 transformer_heads: 1
 use_attention_module: False
+gtcg_conv_type: "transf"
+param_match: False
+run_tag: ""
 
 # use the Q_Learner to train / QMIX as baseline
 standardise_returns: False
